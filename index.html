@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Temperature Lorraine App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: Arial, sans-serif; background: #f7f7f7; margin: 0; padding: 0; }
+        .container { max-width: 400px; margin: 60px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 32px; text-align: center; }
+        h1 { color: #2c3e50; }
+        .temperature { font-size: 3em; color: #e67e22; margin: 24px 0; }
+        .timestamp { color: #888; font-size: 1em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Temperature à Metz</h1>
+        <div class="temperature" id="temperature">--</div>
+        <div class="timestamp" id="timestamp">Loading...</div>
+    </div>
+    <div style="display: flex; justify-content: center; margin-top: 24px;">
+        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2611.007234091849!2d6.160763876556405!3d49.12449777136939!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4794d954982c3097%3A0x551c9f2b979a4418!2sLyc%C3%A9e%20Louis%20de%20Cormontaigne!5e0!3m2!1sfr!2sfr!4v1767650045499!5m2!1sfr!2sfr" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+    </div>
+    <div class="container" style="margin-top: 24px;">
+        <canvas id="tempChart" width="350" height="180"></canvas>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        async function fetchTemperature() {
+            try {
+                const response = await fetch('/last-temperature');
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                document.getElementById('temperature').textContent = data.temperature !== undefined ? data.temperature + '°C' : '--';
+                document.getElementById('timestamp').textContent = data.timestamp ? new Date(data.timestamp).toLocaleString() : '';
+            } catch (err) {
+                document.getElementById('temperature').textContent = '--';
+                document.getElementById('timestamp').textContent = 'Error fetching data';
+            }
+        }
+        async function fetchTemperatures() {
+            try {
+                const response = await fetch('/last-temperatures');
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                updateChart(data.temperatures);
+            } catch (err) {
+                updateChart([]);
+            }
+        }
+        let tempChart;
+        function updateChart(temps) {
+            const ctx = document.getElementById('tempChart').getContext('2d');
+            const labels = temps.map((_, i) => i + 1);
+            const values = temps.map(t => t.temperature);
+            if (!tempChart) {
+                tempChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Températures (°C)',
+                            data: values,
+                            borderColor: '#e67e22',
+                            backgroundColor: 'rgba(230,126,34,0.1)',
+                            fill: true,
+                            tension: 0.2
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            x: { display: false },
+                            y: { beginAtZero: false }
+                        },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            } else {
+                tempChart.data.labels = labels;
+                tempChart.data.datasets[0].data = values;
+                tempChart.update();
+            }
+        }
+        fetchTemperature();
+        fetchTemperatures();
+        setInterval(fetchTemperature, 5000);
+        setInterval(fetchTemperatures, 5000);
+    </script>
+</body>
+</html>
