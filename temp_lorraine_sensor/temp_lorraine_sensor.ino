@@ -7,8 +7,8 @@
 const int oneWireBus = 4;     
 
 // WiFi credentials
-const char* ssid = "Freebox-1AD904";
-const char* password = "avocet#-ratam9%-devoraret#3-atriplex64";
+const char* ssid = "ENTER_SSID_HERE";
+const char* password = "ENTER_PASSWORD_HERE";
 
 // Server endpoint
 const char* serverUrl = "http://192.168.1.35:8000/temperature";
